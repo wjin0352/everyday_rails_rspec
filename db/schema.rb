@@ -11,7 +11,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140606043459) do
+ActiveRecord::Schema.define(version: 20150218200809) do
+
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
 
   create_table "contacts", force: true do |t|
     t.string   "firstname"
@@ -29,7 +32,13 @@ ActiveRecord::Schema.define(version: 20140606043459) do
     t.datetime "updated_at"
   end
 
-  add_index "phones", ["contact_id"], name: "index_phones_on_contact_id"
+  add_index "phones", ["contact_id"], name: "index_phones_on_contact_id", using: :btree
+
+  create_table "thermometers", force: true do |t|
+    t.integer  "temp"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
 
   create_table "users", force: true do |t|
     t.string   "email"
