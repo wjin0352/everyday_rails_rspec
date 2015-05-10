@@ -2,6 +2,10 @@ require 'rails_helper'
 
 describe Contact do
 
+  it "has a valid factory" do
+    expect(FactoryGirl.build(:contact)).to be_valid
+  end
+
   it "is valid with a firstname, lastname and email" do
     contact = Contact.new(
         firstname: 'Aaron',
@@ -9,47 +13,97 @@ describe Contact do
         email: 'tester@example.com')
     expect(contact).to be_valid
   end
-  
+
   it "is invalid without a firstname" do
-    contact = Contact.new(firstname: nil)
+    contact = FactoryGirl.build(:contact,
+      firstname: nil)
     contact.valid?
     expect(contact.errors[:firstname]).to include("can't be blank")
   end
-  
+
   it "is invalid without a lastname" do
-    contact = Contact.new(lastname: nil)
+    contact = FactoryGirl.build(:contact,
+    lastname: nil )
     contact.valid?
     expect(contact.errors[:lastname]).to include("can't be blank")
   end
-  
+
   it "is invalid without an email address" do
-    contact = Contact.new(email: nil)
+    contact = FactoryGirl.build(:contact,
+      email: nil)
     contact.valid?
     expect(contact.errors[:email]).to include("can't be blank")
   end
-  
+
+  it "returns contacts full name as a string" do
+    contact = FactoryGirl.build(:contact,
+      firstname: 'Jane',
+      lastname: 'Smith')
+    contact.valid?
+    expect(contact.name).to eq "Jane Smith"
+  end
+
   it "is invalid with a duplicate email address" do
-    Contact.create(
-        firstname: 'Joe', lastname: 'Tester',
-        email: 'tester@example.com'
-    )
-    contact = Contact.new(
-        firstname: 'Jane', lastname: 'Tester',
-        email: 'tester@example.com'
-    )
+    FactoryGirl.create(:contact,
+      email: 'aaron@example.com')
+    contact = FactoryGirl.build(:contact,
+      email: 'aaron@example.com')
     contact.valid?
     expect(contact.errors[:email]).to include("has already been taken")
   end
-  
-  it "returns a contact's full name as a string" do
-    contact = Contact.new(firstname: 'Joe', lastname: 'dumars', email: 'johndoe@example.com')
-    expect(contact.name).to eql("Joe dumars")
-  
+
+  # Same ex as above with out extra syntax
+  # we added config.include FactoryGirl::Syntax::Methods so we no longer need FactoryGirl typed out
+  it "is invalid with a duplicate email address" do
+    create(:contact,
+                       email: 'aaron@example.com')
+    contact = build(:contact,
+                                email: 'aaron@example.com')
+    contact.valid?
+    expect(contact.errors[:email]).to include("has already been taken")
   end
 
-  describe "filter last name by letter" do 
-    before :each do
-       @smith = Contact.create(
+  it "returns a sorted array of results that match" do
+    smith = Contact.create(
+        firstname: 'John',
+        lastname: 'Smith',
+        email: 'jsmith@example.com'
+    )
+    jones = Contact.create(
+        firstname: 'Tim',
+        lastname: 'Jones',
+        email: 'tjones@example.com'
+    )
+    johnson = Contact.create(
+        firstname: 'John',
+        lastname: 'Johnson',
+        email: 'jjohnson@example.com'
+    )
+    expect(Contact.by_letter("J")).to eq [johnson, jones]
+  end
+
+  it "omits results that do not match" do
+    smith = Contact.create(
+        firstname: 'John',
+        lastname: 'Smith',
+        email: 'jsmith@example.com'
+    )
+    jones = Contact.create(
+        firstname: 'Tim',
+        lastname: 'Jones',
+        email: 'tjones@example.com'
+    )
+    johnson = Contact.create(
+        firstname: 'John',
+        lastname: 'Johnson',
+        email: 'jjohnson@example.com'
+    )
+    expect(Contact.by_letter("J")).not_to include smith
+  end
+
+    describe "filter last name by letter" do
+      before :each do
+        @smith = Contact.create(
             firstname: 'John',
             lastname: 'Smith',
             email: 'jsmith@example.com'
@@ -66,21 +120,28 @@ describe Contact do
         )
       end
 
-    context 'matching letters' do
-      it 'returns a sorted array of results that match' do
-        expect(Contact.by_letter('J')).to eq [@johnson, @jones]
+      context "matching letters" do
+        it "returns a sorted array of results that match" do
+          expect(Contact.by_letter("J")).to eq [@johnson, @jones]
+        end
       end
+
+      context "non-matching letters" do
+        it "omits results that do not match" do
+          expect(Contact.by_letter("J")).not_to include @smith
+        end
+      end
+
+      it "has three phone types" do
+        expect(create(:contact).phones.count).to eq 3
+      end
+
     end
 
-    context 'non matching letters' do
-      it 'omits results that do not match' do
-        expect(Contact.by_letter('J')).not_to include @smith
-      end
-    end
-  end    
+
+
 
 end
-
 
 
 
